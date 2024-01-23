@@ -13,10 +13,9 @@
 
 #include <deque>
 #include <mutex>
-#include <shared_mutex>
 #include <string>
 
-extern std::shared_mutex words_set_mutex;
+extern std::mutex words_set_mutex;
 extern std::mutex input_file_mutex;
 
 namespace word_counter {
@@ -38,19 +37,11 @@ auto handle_chunk(std::ifstream* input_file, Words_set* haystack) -> void
         }
         file_lock.unlock();
 
-        for (std::string& word : chunk_words) {
-            unique_words.insert(word);
-        }
+        unique_words.insert(chunk_words.begin(), chunk_words.end());
     }
 
-    for (const std::string& word : unique_words) {
-        std::shared_lock<std::shared_mutex> haystack_lock_shared{words_set_mutex};
-        if (!haystack->contains(word)) {
-            haystack_lock_shared.unlock();
-            std::unique_lock<std::shared_mutex> haystack_lock_unique{words_set_mutex};
-            haystack->insert(word);
-        }
-    }
+    std::unique_lock<std::mutex> haystack_lock_unique{words_set_mutex};
+    haystack->merge(unique_words);
 }
 
 } // namespace word_counter

@@ -21,14 +21,13 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
-#include <shared_mutex>
 #include <string>
 #include <thread>
 #include <vector>
 
 using namespace word_counter;
 
-std::shared_mutex words_set_mutex;
+std::mutex words_set_mutex;
 std::mutex input_file_mutex;
 
 // NOLINTNEXTLINE
