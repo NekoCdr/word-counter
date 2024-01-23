@@ -63,12 +63,15 @@ auto handle_chunk(std::ifstream* input_file, Words_set* haystack) -> void
 }
 
 // NOLINTNEXTLINE
-int main()
+int main(int argc, char* argv[])
 {
-    std::string f_path{"./test.txt"};
     Words_set unique_words{};
 
     try {
+        if (argc < 2) {
+            throw std::string{"File path not specified"};
+        }
+        std::string f_path{argv[1]};
 
         if (!std::filesystem::exists(f_path)) {
             throw std::string{"File not exists"};
