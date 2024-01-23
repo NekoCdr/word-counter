@@ -11,5 +11,5 @@ cmake --build build
 ## Running app
 
 ```shell
-./build/word_counter
+./build/word_counter input/text/file/path
 ```
