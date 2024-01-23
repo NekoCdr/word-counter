@@ -8,9 +8,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "counter.h"
+#include "defines.h"
+#include "file.h"
+
 #include <algorithm>
 #include <cmath>
-#include <deque>
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -19,48 +24,12 @@
 #include <shared_mutex>
 #include <string>
 #include <thread>
-#include <unordered_set>
 #include <vector>
 
-constexpr const int ChunkSizeTrigger{4000000}; // 4 MB
-constexpr const int ThreadsMax{12};
+using namespace word_counter;
 
-using Words_set = std::unordered_set<std::string>;
-
-static std::shared_mutex words_set_mutex;
-static std::mutex input_file_mutex;
-
-auto handle_chunk(std::ifstream* input_file, Words_set* haystack) -> void
-{
-    Words_set unique_words{};
-
-    while (!input_file->eof()) {
-        int chunk_size{0};
-        std::deque<std::string> chunk_words{};
-
-        std::unique_lock<std::mutex> file_lock{input_file_mutex};
-        while (!input_file->eof() && chunk_size < ChunkSizeTrigger) {
-            std::string buff;
-            *input_file >> buff;
-            chunk_words.push_back(buff);
-            chunk_size += static_cast<int>(buff.size() + 1);
-        }
-        file_lock.unlock();
-
-        for (std::string word : chunk_words) {
-            unique_words.insert(word);
-        }
-    }
-
-    for (std::string word : unique_words) {
-        std::shared_lock<std::shared_mutex> haystack_lock_shared{words_set_mutex};
-        if (!haystack->contains(word)) {
-            haystack_lock_shared.unlock();
-            std::unique_lock<std::shared_mutex> haystack_lock_unique{words_set_mutex};
-            haystack->insert(word);
-        }
-    }
-}
+std::shared_mutex words_set_mutex;
+std::mutex input_file_mutex;
 
 // NOLINTNEXTLINE
 int main(int argc, char* argv[])
@@ -73,27 +42,16 @@ int main(int argc, char* argv[])
         }
         std::string f_path{argv[1]};
 
-        if (!std::filesystem::exists(f_path)) {
-            throw std::string{"File not exists"};
-        }
-        if (!std::filesystem::is_regular_file(f_path)) {
-            throw std::string{"File is not regular"};
-        }
+        std::ifstream input_file{word_counter::open_file(f_path)};
+        uintmax_t file_size{std::filesystem::file_size(f_path)};
 
-        auto file_size{std::filesystem::file_size(f_path)};
-        std::ifstream input_file{f_path};
-
-        if (!input_file.is_open()) {
-            throw std::string{"File is not open"};
-        }
-
-        int threads_quantity{std::min(
-            ThreadsMax,
-            static_cast<int>(std::ceil(file_size / ChunkSizeTrigger))
-        )};
+        int threads_quantity{static_cast<int>(std::min(
+            static_cast<uintmax_t>(std::thread::hardware_concurrency()),
+            static_cast<uintmax_t>(std::ceil(file_size / ChunkSizeTrigger))
+        ))};
 
         std::vector<std::unique_ptr<std::thread>> threads;
-        threads.reserve(threads_quantity);
+        threads.reserve(static_cast<size_t>(threads_quantity));
 
         for (int i=0; i<threads_quantity; i++) {
             threads.emplace_back(std::make_unique<std::thread>(
@@ -106,6 +64,8 @@ int main(int argc, char* argv[])
         for (auto& th : threads) {
             th->join();
         }
+
+        input_file.close();
 
         std::cout << unique_words.size() << std::endl;
     } catch (std::string& e) {

@@ -10,9 +10,11 @@ Checks: >
   readability-identifier-*,
   -bugprone-not-null-terminated-result,
   -*-avoid-c-arrays,
+  -cppcoreguidelines-avoid-non-const-global-variables,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -misc-non-private-member-variables-in-classes,
-  -performance-avoid-endl
+  -performance-avoid-endl,
+  -readability-identifier-length
 
 CheckOptions:
   - key:             readability-identifier-naming.ClassCase

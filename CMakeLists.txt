@@ -9,6 +9,11 @@ set(FETCHCONTENT_QUIET OFF)
 
 add_executable(word_counter
     src/main.cpp
+    src/counter.h
+    src/counter.cpp
+    src/defines.h
+    src/file.h
+    src/file.cpp
 )
 target_include_directories(word_counter PRIVATE src)
 
@@ -26,6 +31,8 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         "-Wno-c++20-compat"
         "-Wno-c++20-compat-pedantic"
         "-Wno-padded"
+        "-Wno-unsafe-buffer-usage"
+        "-Wno-missing-variable-declarations"
     )
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(word_counter PUBLIC
