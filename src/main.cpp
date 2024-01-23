@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -29,23 +30,13 @@ using Words_set = std::unordered_set<std::string>;
 static std::shared_mutex words_set_mutex;
 static std::mutex input_file_mutex;
 
-auto check_word(Words_set* haystack, std::string* needle)
-{
-    std::shared_lock<std::shared_mutex> haystack_lock_shared{words_set_mutex};
-    if (!haystack->contains(*needle)) {
-        haystack_lock_shared.unlock();
-        std::unique_lock<std::shared_mutex> haystack_lock_unique{words_set_mutex};
-        haystack->insert(*needle);
-    }
-}
-
 auto handle_chunk(std::ifstream* input_file, Words_set* haystack) -> void
 {
     Words_set unique_words{};
 
     while (!input_file->eof()) {
         int chunk_size{0};
-        std::vector<std::string> chunk_words{};
+        std::deque<std::string> chunk_words{};
 
         std::unique_lock<std::mutex> file_lock{input_file_mutex};
         while (!input_file->eof() && chunk_size < ChunkSizeTrigger) {
@@ -57,7 +48,16 @@ auto handle_chunk(std::ifstream* input_file, Words_set* haystack) -> void
         file_lock.unlock();
 
         for (std::string word : chunk_words) {
-            check_word(haystack, &word);
+            unique_words.insert(word);
+        }
+    }
+
+    for (std::string word : unique_words) {
+        std::shared_lock<std::shared_mutex> haystack_lock_shared{words_set_mutex};
+        if (!haystack->contains(word)) {
+            haystack_lock_shared.unlock();
+            std::unique_lock<std::shared_mutex> haystack_lock_unique{words_set_mutex};
+            haystack->insert(word);
         }
     }
 }
