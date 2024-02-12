@@ -44,9 +44,13 @@ int main(int argc, char* argv[])
         std::ifstream input_file{word_counter::open_file(f_path)};
         uintmax_t file_size{std::filesystem::file_size(f_path)};
 
+        auto chunk_quantity = static_cast<uintmax_t>(std::ceil(
+            static_cast<float>(file_size) / ChunkSizeTrigger
+        ));
+
         int threads_quantity{static_cast<int>(std::min(
             static_cast<uintmax_t>(std::thread::hardware_concurrency()),
-            static_cast<uintmax_t>(std::ceil(file_size / ChunkSizeTrigger))
+            chunk_quantity
         ))};
 
         std::vector<std::unique_ptr<std::thread>> threads;
