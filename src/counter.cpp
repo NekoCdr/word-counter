@@ -32,8 +32,10 @@ auto handle_chunk(std::ifstream* input_file, Words_set* haystack) -> void
         while (!input_file->eof() && chunk_size < ChunkSizeTrigger) {
             std::string buff;
             *input_file >> buff;
-            chunk_words.push_back(buff);
-            chunk_size += static_cast<int>(buff.size() + 1);
+            if (!buff.empty()) {
+                chunk_words.push_back(buff);
+                chunk_size += static_cast<int>(buff.size() + 1);
+            }
         }
         file_lock.unlock();
 
