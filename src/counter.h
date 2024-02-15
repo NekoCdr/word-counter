@@ -13,11 +13,26 @@
 
 #include "defines.h"
 
+#include <cstdint>
 #include <fstream>
 
 namespace word_counter {
 
 auto handle_chunk(std::ifstream* input_file, Words_set* haystack) -> void;
+
+auto handle_chunk(
+    Words_set* haystack,
+    std::ifstream input_file,
+    uintmax_t stream_begin,
+    uintmax_t stream_end
+) -> void;
+
+auto handle_chunk(
+    Words_absl_set* haystack,
+    char* f_stream,
+    intmax_t stream_begin,
+    intmax_t stream_end
+) -> void;
 
 } // namespace word_counter
 

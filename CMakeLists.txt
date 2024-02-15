@@ -6,6 +6,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(ABSL_PROPAGATE_CXX_STD ON)
+set(ABSL_USE_SYSTEM_INCLUDES ON)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    abseil-cpp
+    GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+)
+FetchContent_MakeAvailable(abseil-cpp)
+
 add_executable(word_counter
     src/main.cpp
     src/counter.h
@@ -13,8 +24,16 @@ add_executable(word_counter
     src/defines.h
     src/file.h
     src/file.cpp
+    src/runner.h
+    src/runner.cpp
 )
 target_include_directories(word_counter PRIVATE src)
+target_link_libraries(word_counter absl::node_hash_set)
+
+add_executable(word_helper
+    src/helper.cpp
+)
+target_include_directories(word_helper PRIVATE src)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(word_counter PUBLIC

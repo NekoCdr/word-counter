@@ -8,69 +8,44 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "counter.h"
 #include "defines.h"
-#include "file.h"
+#include "runner.h"
 
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <filesystem>
-#include <fstream>
 #include <iostream>
-#include <memory>
 #include <mutex>
+#include <ostream>
 #include <string>
-#include <thread>
-#include <vector>
 
 using namespace word_counter;
+using namespace std::literals;
 
 std::mutex words_set_mutex;
 std::mutex input_file_mutex;
 
+
+
 // NOLINTNEXTLINE
 int main(int argc, char* argv[])
 {
-    Words_set unique_words{};
-
     try {
         if (argc < 2) {
             throw std::string{"File path not specified"};
         }
         std::string f_path{argv[1]};
 
-        std::ifstream input_file{word_counter::open_file(f_path)};
-        uintmax_t file_size{std::filesystem::file_size(f_path)};
-
-        auto chunk_quantity = static_cast<uintmax_t>(std::ceil(
-            static_cast<float>(file_size) / ChunkSizeTrigger
-        ));
-
-        int threads_quantity{static_cast<int>(std::min(
-            static_cast<uintmax_t>(std::thread::hardware_concurrency()),
-            chunk_quantity
-        ))};
-
-        std::vector<std::unique_ptr<std::thread>> threads;
-        threads.reserve(static_cast<size_t>(threads_quantity));
-
-        for (int i=0; i<threads_quantity; i++) {
-            threads.emplace_back(std::make_unique<std::thread>(
-                handle_chunk,
-                &input_file,
-                &unique_words
-            ));
+        Runner runner{get_runner(Runner_version::V3)};
+        if (argc >= 3) {
+            std::string runner_version{argv[2]};
+            if (!runner_version.compare("v1")) {
+                runner = get_runner(Runner_version::V1);
+            } else if (!runner_version.compare("v2")) {
+                runner = get_runner(Runner_version::V2);
+            } else if (!runner_version.compare("v3")) {
+                runner = get_runner(Runner_version::V3);
+            }
         }
 
-        for (auto& th : threads) {
-            th->join();
-        }
-
-        input_file.close();
-
-        std::cout << unique_words.size() << std::endl;
+        runner(f_path);
     } catch (std::string& e) {
         std::cout << e << std::endl;
     }

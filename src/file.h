@@ -11,11 +11,15 @@
 #ifndef WORD_COUNTER_FILE_H
 #define WORD_COUNTER_FILE_H
 
+#include <fcntl.h>
 #include <fstream>
+#include <sys/stat.h>
 
 namespace word_counter {
 
-auto open_file(std::string_view path) -> std::ifstream;
+auto open_fstream(std::string_view path) -> std::ifstream;
+auto open_fd(std::string_view path, int mode = O_RDONLY) -> int;
+auto get_stat(int fd) -> struct stat;
 
 } // namespace word_counter
 
